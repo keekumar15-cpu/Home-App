@@ -1,0 +1,50 @@
+<%- include('../partials/header') %>
+
+<div class="topbar" style="padding:0; border:none; margin-bottom:28px;">
+  <h1>Loans given</h1>
+  <a href="/loans/new" class="btn" style="margin:0;">Add loan</a>
+</div>
+
+<% Object.keys(totalsByCurrency).forEach(cur => { const totals = totalsByCurrency[cur]; %>
+  <div class="currency-group-label"><%= cur %></div>
+  <div class="metrics">
+    <div class="metric expected">
+      <div class="label">Total lent</div>
+      <div class="value"><%= formatMoney(totals.principal, cur) %></div>
+    </div>
+    <div class="metric received">
+      <div class="label">Repaid</div>
+      <div class="value"><%= formatMoney(totals.repaid, cur) %></div>
+    </div>
+    <div class="metric outstanding">
+      <div class="label">Outstanding</div>
+      <div class="value"><%= formatMoney(totals.outstanding, cur) %></div>
+    </div>
+  </div>
+<% }) %>
+
+<% if (statuses.length === 0) { %>
+  <p class="muted">No loans yet. <a href="/loans/new" class="tag-violet">Add your first loan</a>.</p>
+<% } %>
+
+<div class="tenant-grid">
+  <% statuses.forEach(s => { %>
+    <a href="/loans/<%= s.loan.id %>" class="tenant-card <%= s.color %>">
+      <div class="name"><%= s.loan.borrowerName %></div>
+      <div class="unit"><%= new Date(s.loan.dateGiven).toLocaleDateString('en-IN') %> · <%= s.loan.currency %><% if (Number(s.loan.interestRate) > 0) { %> · <%= s.loan.interestRate %>% interest<% } %></div>
+
+      <span class="badge <%= s.color %>">
+        <% if (s.closed) { %>Closed
+        <% } else if (s.fullyRepaid) { %>Fully repaid
+        <% } else { %>Outstanding
+        <% } %>
+      </span>
+
+      <div class="row"><span class="k">Principal</span><span class="v"><%= formatMoney(s.principal, s.loan.currency) %></span></div>
+      <div class="row"><span class="k">Repaid</span><span class="v"><%= formatMoney(s.repaid, s.loan.currency) %></span></div>
+      <div class="row"><span class="k">Outstanding</span><span class="v"><%= formatMoney(s.outstanding, s.loan.currency) %></span></div>
+    </a>
+  <% }) %>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,36 @@
+<%- include('../partials/header') %>
+
+<h1><%= claim ? 'Edit claim' : 'Add claim' %></h1>
+<p><a href="/claims" class="muted">← Back to claims</a></p>
+
+<div class="card" style="margin-top:20px; max-width:560px;">
+  <form action="<%= claim ? '/claims/' + claim.id : '/claims' %>" method="POST">
+    <label for="description">Description</label>
+    <input type="text" id="description" name="description" value="<%= claim ? claim.description : '' %>" placeholder="e.g. Client dinner - Acme Corp" required />
+
+    <label for="category">Category</label>
+    <input type="text" id="category" name="category" value="<%= claim && claim.category ? claim.category : '' %>" placeholder="e.g. Travel, Entertainment" />
+
+    <label for="currency">Currency</label>
+    <select id="currency" name="currency">
+      <% CURRENCY_CODES.forEach(c => { %>
+        <option value="<%= c %>" <%= claim && claim.currency === c ? 'selected' : (!claim && c === 'INR' ? 'selected' : '') %>><%= c %></option>
+      <% }) %>
+    </select>
+
+    <label for="amount">Amount</label>
+    <input type="number" step="0.01" id="amount" name="amount" value="<%= claim ? claim.amount : '' %>" required />
+
+    <label for="dateIncurred">Date incurred</label>
+    <%- include('../partials/date-select', { name: 'dateIncurred', value: claim && claim.dateIncurred ? claim.dateIncurred : null }) %>
+
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes" rows="2"><%= claim && claim.notes ? claim.notes : '' %></textarea>
+
+    <% if (error) { %><div class="error-msg"><%= error %></div><% } %>
+
+    <button type="submit" class="btn"><%= claim ? 'Save changes' : 'Add claim' %></button>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

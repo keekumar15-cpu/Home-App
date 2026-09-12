@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home Ledger</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<% if (typeof username !== 'undefined' && username) { %>
+  <div class="topbar">
+    <h1><a href="/" style="text-decoration:none;">Home Ledger</a></h1>
+    <div class="topbar-right">
+      <span class="user-email"><%= username %></span>
+      <form action="/logout" method="POST">
+        <button class="btn-link" type="submit">Log out</button>
+      </form>
+    </div>
+  </div>
+  <nav class="tabs">
+    <a href="/" class="tab <%= currentPath === '/' ? 'active' : '' %>">Rent</a>
+    <a href="/bills" class="tab <%= currentPath && currentPath.startsWith('/bills') ? 'active' : '' %>">Bills</a>
+    <a href="/loans" class="tab <%= currentPath && currentPath.startsWith('/loans') ? 'active' : '' %>">Loans</a>
+    <a href="/expenses" class="tab <%= currentPath && currentPath.startsWith('/expenses') ? 'active' : '' %>">Expenses</a>
+    <a href="/claims" class="tab <%= currentPath && currentPath.startsWith('/claims') ? 'active' : '' %>">Claims</a>
+    <a href="/jobs" class="tab <%= currentPath && currentPath.startsWith('/jobs') ? 'active' : '' %>">Jobs</a>
+  </nav>
+<% } %>
+<main>

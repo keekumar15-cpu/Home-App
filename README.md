@@ -1,101 +1,100 @@
-# Rent Tracker
+# Home Ledger
 
-Single-user rent tracking app for 10 tenants — Node.js/Express + EJS + PostgreSQL (via Prisma), built to run as one Docker container on a Hostinger VPS alongside your existing Postgres instance.
+Personal finance tracker — rent, bills, loans given, major expenses, reimbursable
+claims, and pending jobs — each its own tab, multi-currency (INR/IDR/USD/SGD/EUR).
+Node.js/Express/EJS + PostgreSQL, deployed as a Docker container behind an existing
+Traefik reverse proxy on a Hostinger VPS.
 
-## Features
+## Deploying from this repo
 
-- Dashboard with colored status cards per tenant (green = paid up, amber = partial, red = overdue, gray = contract expired) and month-level totals
-- Tenant records with unit, contact, opening balance (editable, with a full audit history), and advance amount
-- Contracts as their own history — renewing a lease adds a new contract row rather than overwriting the old one, so past rent terms are preserved
-- Payment log per tenant, tagged to the month it covers
-- Vacate flow that prompts you to confirm the advance was returned
-- Single admin login (bcrypt-hashed password from `.env`, no user table needed)
+This repo is deployed via Hostinger's Docker Manager API, pointed directly at this
+GitHub URL — no manual file transfer needed. Secrets are **never committed here**;
+they're supplied separately as environment variables at deploy time (see below).
 
-## 1. Set up the database on your VPS
+### One-time VPS setup (already done for the current deployment)
 
-On the VPS, in `psql` (as a superuser):
+- A dedicated Postgres database (`rentdb`) and user already exist inside the VPS's
+  shared Postgres container.
+- Traefik (the reverse proxy) and its Let's Encrypt cert resolver already exist,
+  shared with other apps on the same VPS.
+- The `docker-compose.yml` in this repo assumes both of those are reachable via
+  the external Docker networks `postgresql-jld5_default` and `n8n_default`. If
+  deploying to a different VPS, update those two network names and the Traefik
+  `Host()` rule to match.
 
-```sql
-CREATE DATABASE rentdb;
-CREATE USER rentapp_user WITH ENCRYPTED PASSWORD 'pick-a-strong-password';
-GRANT ALL PRIVILEGES ON DATABASE rentdb TO rentapp_user;
+### Deploying (or redeploying after a change)
+
+Using the Hostinger Docker Manager API's "create/update project" call:
+
+- `content` = this repo's URL (`https://github.com/<you>/<repo>`)
+- `project_name` = `rent-tracker`
+- `environment` = the required variables below, one `KEY=value` per line
+
+Required environment variables:
+
+```
+DATABASE_URL=postgresql://rentapp_user:<password>@postgresql-jld5-postgresql-1:5432/rentdb
+SESSION_SECRET=<random hex string>
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD_HASH=<bcrypt hash>
+ACCOUNT2_USERNAME=<email>
+ACCOUNT2_PASSWORD_HASH=<bcrypt hash>
+ACCOUNT3_USERNAME=<email>
+ACCOUNT3_PASSWORD_HASH=<bcrypt hash>
+RENT_DUE_DAY=5
 ```
 
-## 2. Configure environment variables
+Generate a password hash with:
 
 ```bash
-cp .env.example .env
+node -e "require('bcrypt').hash(process.argv[1], 12).then(console.log)" "your-password-here"
 ```
 
-Fill in:
-- `DATABASE_URL` — use the password you set above
-- `SESSION_SECRET` — generate with `openssl rand -hex 32`
-- `ADMIN_USERNAME` — whatever you want to log in with
-- `ADMIN_PASSWORD_HASH` — generate with:
-  ```bash
-  npm install
-  npm run hash-password -- "your-chosen-password"
-  ```
-  Copy the printed hash into `.env`.
+(requires `bcrypt` installed — `npm install bcrypt` in a scratch folder if needed)
 
-## 3. Run the migration (creates tables)
-
-Locally, with `DATABASE_URL` pointing at a reachable Postgres (or run this once against the VPS's Postgres before first deploy):
+### Local development
 
 ```bash
-npx prisma migrate dev --name init
+cp .env.example .env   # fill in real values
+npm install
+npx prisma generate
+npx prisma db push
+npm run dev
 ```
 
-This generates `prisma/migrations/` — commit that folder; the Docker container runs `prisma migrate deploy` automatically on startup using those files.
+## Making a change and shipping it
 
-## 4. Build and run the container
+1. Edit the code, test locally if you can (`npm run dev` against a local or
+   reachable Postgres).
+2. Commit and push to this repo.
+3. Redeploy: same API call as above, `content` pointed at this repo again. Since
+   `project_name` matches the existing project, it replaces it in place —
+   Docker rebuilds the image from the updated `Dockerfile`/source and restarts.
+4. Check logs after deploy for a clean startup: OpenSSL is now baked into the
+   image (no longer reinstalled per-start), so a clean run goes straight from
+   `npm install` (cached, fast) to `Prisma schema loaded` → `database is now in
+   sync` (or `already in sync`) → `Rent tracker listening on port 4000`.
 
-```bash
-docker compose up -d --build
-```
+## Data model
 
-The app listens on `127.0.0.1:4000` on the VPS. It is not exposed publicly by itself.
+Eleven Prisma models across six tabs — see `prisma/schema.prisma` for exact
+fields. Status/coloring logic per tab lives in `src/lib/*Status.js`.
 
-## 5. Point your reverse proxy at it
+## Known gotchas
 
-Using whatever you already run on the VPS (Nginx or Caddy), add a subdomain (e.g. `rent.yourdomain.com`) that proxies to `http://127.0.0.1:4000` with Let's Encrypt SSL.
+- **The `session` table isn't Prisma-managed** (it belongs to
+  `connect-pg-simple`). Every `prisma db push` logs a warning about dropping it
+  and recreates it empty — this just logs out whoever was signed in. Harmless,
+  expected.
+- **`app.set('trust proxy', 1)`** in `src/app.js` is required because the app
+  sits behind Traefik (TLS-terminating). Without it, the session cookie is
+  silently never set and logins appear to succeed but don't persist.
+- **Dates** are three dropdowns (day/month/year), not native date pickers — see
+  `src/views/partials/date-select.ejs` and `src/lib/dateFields.js`.
+- **Currency totals are grouped per currency, never summed across currencies**
+  — see `src/lib/currency.js`'s `groupByCurrency`.
 
-Example Nginx server block:
+## Not yet built
 
-```nginx
-server {
-    listen 443 ssl;
-    server_name rent.yourdomain.com;
-
-    ssl_certificate     /etc/letsencrypt/live/rent.yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/rent.yourdomain.com/privkey.pem;
-
-    location / {
-        proxy_pass http://127.0.0.1:4000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-## 6. Back up regularly
-
-Add a nightly cron job on the VPS:
-
-```bash
-0 2 * * * pg_dump -U rentapp_user rentdb > /path/to/backups/rentdb_$(date +\%F).sql
-```
-
-## Notes on the model
-
-- **Opening balance** lives on the tenant and is directly editable; every edit is logged in `BalanceAdjustment` with old/new value and an optional note, so nothing is silently overwritten.
-- **Advance** is tracked as `advanceAmount` + `advanceStatus` (`held`/`returned`). Marking a tenant vacated prompts you to confirm the advance was returned, which stamps `advanceReturnedDate`.
-- **Contracts** are their own table so renewals don't destroy history — the dashboard always uses whichever contract covers today's date, or the most recent one if the lease has lapsed.
-- **"Overdue"** = past `RENT_DUE_DAY` (default the 5th) in the current month with an active, non-expired contract and outstanding balance for that month.
-
-## What's not built yet (intentionally out of scope for v1)
-
-- CSV/PDF export of payment history
-- Multi-property grouping (fine for 10 tenants in one view; add a `Property` table later if needed)
-- Automated monthly reminders — you asked for the dashboard flag only, no email
+- CSV/PDF export, automated `rentdb` backups (recommended next step), in-app
+  password change, loan interest accrual, per-account activity log.

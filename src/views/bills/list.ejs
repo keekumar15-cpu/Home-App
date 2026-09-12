@@ -1,0 +1,51 @@
+<%- include('../partials/header') %>
+
+<div class="topbar" style="padding:0; border:none; margin-bottom:28px;">
+  <h1>Bills</h1>
+  <a href="/bills/new" class="btn" style="margin:0;">Add bill</a>
+</div>
+
+<% Object.keys(totalsByCurrency).forEach(cur => { const totals = totalsByCurrency[cur]; %>
+  <div class="currency-group-label"><%= cur %></div>
+  <div class="metrics">
+    <div class="metric expected">
+      <div class="label">Expected this period</div>
+      <div class="value"><%= formatMoney(totals.expected, cur) %></div>
+    </div>
+    <div class="metric received">
+      <div class="label">Paid</div>
+      <div class="value"><%= formatMoney(totals.paid, cur) %></div>
+    </div>
+    <div class="metric outstanding">
+      <div class="label">Outstanding</div>
+      <div class="value"><%= formatMoney(totals.outstanding, cur) %></div>
+    </div>
+  </div>
+<% }) %>
+
+<% if (statuses.length === 0) { %>
+  <p class="muted">No bills yet. <a href="/bills/new" class="tag-violet">Add your first bill</a>.</p>
+<% } %>
+
+<div class="tenant-grid">
+  <% statuses.forEach(s => { %>
+    <a href="/bills/<%= s.bill.id %>" class="tenant-card <%= s.color %>">
+      <div class="name"><%= s.bill.name %></div>
+      <div class="unit"><%= s.bill.category || s.bill.frequency %> · <%= s.bill.currency %></div>
+
+      <span class="badge <%= s.color %>">
+        <% if (s.closed) { %>Closed
+        <% } else if (s.fullyPaid) { %>Paid
+        <% } else if (s.pastDue) { %>Overdue
+        <% } else { %>Due
+        <% } %>
+      </span>
+
+      <div class="row"><span class="k">Amount</span><span class="v"><%= formatMoney(s.expected, s.bill.currency) %></span></div>
+      <div class="row"><span class="k">Paid (<%= s.periodLabel %>)</span><span class="v"><%= formatMoney(s.paidThisPeriod, s.bill.currency) %></span></div>
+      <div class="row"><span class="k">Outstanding</span><span class="v"><%= formatMoney(s.outstanding, s.bill.currency) %></span></div>
+    </a>
+  <% }) %>
+</div>
+
+<%- include('../partials/footer') %>

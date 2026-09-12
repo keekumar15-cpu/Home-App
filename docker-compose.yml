@@ -1,17 +1,39 @@
-version: "3.9"
-
 services:
   rent-app:
     build: .
     container_name: rent-tracker
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+      - ACCOUNT2_USERNAME=${ACCOUNT2_USERNAME}
+      - ACCOUNT2_PASSWORD_HASH=${ACCOUNT2_PASSWORD_HASH}
+      - ACCOUNT3_USERNAME=${ACCOUNT3_USERNAME}
+      - ACCOUNT3_PASSWORD_HASH=${ACCOUNT3_PASSWORD_HASH}
+      - RENT_DUE_DAY=${RENT_DUE_DAY:-5}
+      - PORT=4000
+      - NODE_ENV=production
     ports:
-      # Bind to localhost only — the VPS's Nginx/Caddy reverse proxy
-      # handles the public-facing domain + SSL and forwards here.
+      # Bind to localhost only — Traefik (already running on the VPS)
+      # handles the public domain, TLS, and forwards here.
       - "127.0.0.1:4000:4000"
-    extra_hosts:
-      # Lets the container reach Postgres running directly on the VPS host
-      # (not in a container) via host.docker.internal, on Linux.
-      - "host.docker.internal:host-gateway"
+    networks:
+      - db_net
+      - web_net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.rent-tracker.rule=Host(`rent.msaii.cloud`)
+      - traefik.http.routers.rent-tracker.tls=true
+      - traefik.http.routers.rent-tracker.entrypoints=web,websecure
+      - traefik.http.routers.rent-tracker.tls.certresolver=mytlschallenge
+      - traefik.http.services.rent-tracker.loadbalancer.server.port=4000
+
+networks:
+  db_net:
+    external: true
+    name: postgresql-jld5_default
+  web_net:
+    external: true
+    name: n8n_default

@@ -1,0 +1,27 @@
+<%
+  const _dsName = name;
+  const _dsValue = (typeof value !== 'undefined' && value) ? new Date(value) : new Date();
+  const _dsDay = _dsValue.getDate();
+  const _dsMonth = _dsValue.getMonth() + 1;
+  const _dsYear = _dsValue.getFullYear();
+  const _dsMinYear = (typeof minYear !== 'undefined') ? minYear : 2025;
+  const _dsMaxYear = (typeof maxYear !== 'undefined') ? maxYear : (new Date().getFullYear() + 5);
+  const _dsMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+%>
+<div class="date-select-group">
+  <select name="<%= _dsName %>_day" aria-label="Day">
+    <% for (let d = 1; d <= 31; d++) { %>
+      <option value="<%= d %>" <%= d === _dsDay ? 'selected' : '' %>><%= d %></option>
+    <% } %>
+  </select>
+  <select name="<%= _dsName %>_month" aria-label="Month">
+    <% _dsMonths.forEach((m, i) => { %>
+      <option value="<%= i + 1 %>" <%= (i + 1) === _dsMonth ? 'selected' : '' %>><%= m %></option>
+    <% }) %>
+  </select>
+  <select name="<%= _dsName %>_year" aria-label="Year">
+    <% for (let y = _dsMaxYear; y >= _dsMinYear; y--) { %>
+      <option value="<%= y %>" <%= y === _dsYear ? 'selected' : '' %>><%= y %></option>
+    <% } %>
+  </select>
+</div>

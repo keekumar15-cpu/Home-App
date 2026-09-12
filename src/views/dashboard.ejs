@@ -1,0 +1,67 @@
+<%- include('partials/header') %>
+
+<div class="topbar" style="padding:0; border:none; margin-bottom:28px;">
+  <h1>Overview <span class="month">· <%= monthKey %></span></h1>
+  <a href="/tenants/new" class="btn" style="margin:0;">Add tenant</a>
+</div>
+
+<% Object.keys(totalsByCurrency).forEach(cur => { const totals = totalsByCurrency[cur]; %>
+  <div class="currency-group-label"><%= cur %></div>
+  <div class="metrics">
+    <div class="metric expected">
+      <div class="label">Expected this month</div>
+      <div class="value"><%= formatMoney(totals.expected, cur) %></div>
+    </div>
+    <div class="metric received">
+      <div class="label">Received this month</div>
+      <div class="value"><%= formatMoney(totals.received, cur) %></div>
+    </div>
+    <div class="metric outstanding">
+      <div class="label">Outstanding this month</div>
+      <div class="value"><%= formatMoney(totals.outstanding, cur) %></div>
+    </div>
+    <div class="metric advance">
+      <div class="label">Advances held</div>
+      <div class="value"><%= formatMoney(totals.advanceHeld, cur) %></div>
+    </div>
+  </div>
+<% }) %>
+
+<div class="section-heading">
+  <h2>Tenants</h2>
+</div>
+
+<% if (statuses.length === 0) { %>
+  <p class="muted">No active tenants yet. <a href="/tenants/new" class="tag-violet">Add your first tenant</a>.</p>
+<% } %>
+
+<div class="tenant-grid">
+  <% statuses.forEach(s => { %>
+    <a href="/tenants/<%= s.tenant.id %>" class="tenant-card <%= s.color %>">
+      <div class="name"><%= s.tenant.name %></div>
+      <div class="unit"><%= s.tenant.unit || 'No unit set' %> · <%= s.tenant.currency %></div>
+
+      <span class="badge <%= s.color %>">
+        <% if (s.contractExpired) { %>Contract expired
+        <% } else if (s.overdue) { %>Overdue
+        <% } else if (s.outstanding > 0) { %>Partial
+        <% } else { %>Paid up
+        <% } %>
+      </span>
+
+      <div class="row"><span class="k">Monthly rent</span><span class="v"><%= formatMoney(s.expected, s.tenant.currency) %></span></div>
+      <div class="row"><span class="k">Received</span><span class="v"><%= formatMoney(s.receivedThisMonth, s.tenant.currency) %></span></div>
+      <div class="row"><span class="k">Outstanding</span><span class="v"><%= formatMoney(s.outstanding, s.tenant.currency) %></span></div>
+      <div class="row"><span class="k">Opening balance</span><span class="v"><%= formatMoney(s.openingBalance, s.tenant.currency) %></span></div>
+      <% if (s.contract) { %>
+        <div class="row"><span class="k">Contract ends</span><span class="v"><%= new Date(s.contract.endDate).toLocaleDateString('en-IN') %></span></div>
+      <% } %>
+
+      <% if (s.advanceStatus === 'held' && s.advanceAmount > 0) { %>
+        <div class="advance-note"><%= formatMoney(s.advanceAmount, s.tenant.currency) %> advance held</div>
+      <% } %>
+    </a>
+  <% }) %>
+</div>
+
+<%- include('partials/footer') %>

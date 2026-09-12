@@ -1,0 +1,76 @@
+<%- include('../partials/header') %>
+
+<div class="topbar" style="padding:0; border:none; margin-bottom:8px;">
+  <h1><%= loan.borrowerName %></h1>
+  <span class="badge <%= status.color %>">
+    <% if (status.closed) { %>Closed
+    <% } else if (status.fullyRepaid) { %>Fully repaid
+    <% } else { %>Outstanding
+    <% } %>
+  </span>
+</div>
+<p class="muted" style="margin-top:0;"><%= loan.contact || '' %> <% if (loan.contact) { %>·<% } %> <%= loan.currency %></p>
+<p><a href="/loans/<%= loan.id %>/edit" class="muted">Edit loan details</a> · <a href="/loans" class="muted">Back to loans</a></p>
+
+<div class="two-col" style="margin-top:24px;">
+  <div>
+    <div class="card">
+      <h3>Summary</h3>
+      <div class="row"><span class="k">Principal</span><span class="v"><%= formatMoney(status.principal, loan.currency) %></span></div>
+      <div class="row"><span class="k">Date given</span><span class="v"><%= new Date(loan.dateGiven).toLocaleDateString('en-IN') %></span></div>
+      <div class="row"><span class="k">Interest rate</span><span class="v"><%= loan.interestRate %>%</span></div>
+      <div class="row"><span class="k">Repaid</span><span class="v"><%= formatMoney(status.repaid, loan.currency) %></span></div>
+      <div class="row"><span class="k">Outstanding</span><span class="v"><%= formatMoney(status.outstanding, loan.currency) %></span></div>
+    </div>
+
+    <div class="card">
+      <h3>Log a repayment</h3>
+      <form action="/loans/<%= loan.id %>/repayments" method="POST">
+        <label for="amount">Amount (<%= loan.currency %>)</label>
+        <input type="number" step="0.01" id="amount" name="amount" required />
+
+        <label for="date">Date</label>
+        <%- include('../partials/date-select', { name: 'date' }) %>
+
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="2"></textarea>
+
+        <button type="submit" class="btn">Record repayment</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h3>Repayment history</h3>
+      <% if (loan.repayments.length === 0) { %>
+        <p class="muted">No repayments recorded yet.</p>
+      <% } else { %>
+        <table>
+          <thead><tr><th>Date</th><th>Amount</th><th>Notes</th></tr></thead>
+          <tbody>
+            <% loan.repayments.forEach(r => { %>
+              <tr>
+                <td><%= new Date(r.date).toLocaleDateString('en-IN') %></td>
+                <td><%= formatMoney(r.amount, loan.currency) %></td>
+                <td class="muted"><%= r.notes || '—' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+
+    <% if (loan.status === 'active') { %>
+      <div class="card">
+        <h3>Close this loan</h3>
+        <p class="muted" style="margin-top:0;">Use this once the loan is settled or written off.</p>
+        <form action="/loans/<%= loan.id %>/close" method="POST" onsubmit="return confirm('Close this loan?');">
+          <button type="submit" class="btn danger">Close loan</button>
+        </form>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+
+<h1>Edit job</h1>
+<p><a href="/jobs" class="muted">← Back to jobs</a></p>
+
+<div class="card" style="margin-top:20px; max-width:560px;">
+  <form action="/jobs/<%= job.id %>" method="POST">
+    <label for="title">Job / task</label>
+    <input type="text" id="title" name="title" value="<%= job.title %>" required />
+
+    <label for="category">Category</label>
+    <input type="text" id="category" name="category" value="<%= job.category || '' %>" />
+
+    <label for="targetDate">Target date</label>
+    <%- include('../partials/date-select', { name: 'targetDate', value: job.targetDate }) %>
+
+    <label for="reminderDate">Reminder date (optional)</label>
+    <%- include('../partials/date-select', { name: 'reminderDate', value: job.reminderDate }) %>
+
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes" rows="2"><%= job.notes || '' %></textarea>
+
+    <% if (error) { %><div class="error-msg"><%= error %></div><% } %>
+
+    <button type="submit" class="btn">Save changes</button>
+  </form>
+
+  <form action="/jobs/<%= job.id %>/delete" method="POST" onsubmit="return confirm('Delete this job?');" style="margin-top:8px;">
+    <button type="submit" class="btn danger">Delete job</button>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

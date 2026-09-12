@@ -1,0 +1,83 @@
+<%- include('../partials/header') %>
+
+<div class="topbar" style="padding:0; border:none; margin-bottom:28px;">
+  <h1>Pending Jobs</h1>
+</div>
+
+<div class="metrics">
+  <div class="metric expected">
+    <div class="label">Total pending</div>
+    <div class="value"><%= totals.total %></div>
+  </div>
+  <div class="metric outstanding">
+    <div class="label">Overdue</div>
+    <div class="value"><%= totals.overdue %></div>
+  </div>
+  <div class="metric advance">
+    <div class="label">Reminder due</div>
+    <div class="value"><%= totals.reminderDue %></div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div>
+    <div class="card">
+      <h3>Add a job</h3>
+      <form action="/jobs" method="POST">
+        <label for="title">Job / task</label>
+        <input type="text" id="title" name="title" placeholder="e.g. Renew SKM ISO certificate" required />
+
+        <label for="category">Category</label>
+        <input type="text" id="category" name="category" placeholder="e.g. Compliance, Admin" />
+
+        <label for="targetDate">Target date</label>
+        <%- include('../partials/date-select', { name: 'targetDate' }) %>
+
+        <label for="reminderDate">Reminder date (optional)</label>
+        <%- include('../partials/date-select', { name: 'reminderDate' }) %>
+
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="2"></textarea>
+
+        <button type="submit" class="btn">Add job</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h3>Jobs</h3>
+      <% if (statuses.length === 0) { %>
+        <p class="muted">No pending jobs. Add one to get started.</p>
+      <% } else { %>
+        <% statuses.forEach(s => { %>
+          <div class="card" style="background: var(--surface-raised); margin-bottom:12px;">
+            <span class="badge <%= s.color %>">
+              <% if (s.overdue) { %>Overdue
+              <% } else if (s.reminderDue) { %>Reminder due
+              <% } else { %>On track
+              <% } %>
+            </span>
+            <div class="name" style="margin-top:6px;"><%= s.job.title %></div>
+            <div class="unit"><%= s.job.category || 'Uncategorized' %></div>
+            <div class="row"><span class="k">Target date</span><span class="v"><%= new Date(s.job.targetDate).toLocaleDateString('en-IN') %></span></div>
+            <% if (s.job.reminderDate) { %>
+              <div class="row"><span class="k">Reminder</span><span class="v"><%= new Date(s.job.reminderDate).toLocaleDateString('en-IN') %></span></div>
+            <% } %>
+            <% if (s.job.notes) { %>
+              <div class="row"><span class="k">Notes</span><span class="v"><%= s.job.notes %></span></div>
+            <% } %>
+            <div style="margin-top:12px; display:flex; gap:14px;">
+              <a href="/jobs/<%= s.job.id %>/edit" class="muted">Edit</a>
+              <form action="/jobs/<%= s.job.id %>/done" method="POST" style="display:inline;">
+                <button type="submit" class="btn-link" style="color: var(--green);">Mark done</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

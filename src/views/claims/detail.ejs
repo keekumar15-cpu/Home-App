@@ -1,0 +1,64 @@
+<%- include('../partials/header') %>
+
+<div class="topbar" style="padding:0; border:none; margin-bottom:8px;">
+  <h1><%= claim.description %></h1>
+  <span class="badge <%= status.color %>">
+    <% if (status.claimed) { %>Claimed
+    <% } else if (status.stale) { %>Needs follow-up
+    <% } else { %>Pending
+    <% } %>
+  </span>
+</div>
+<p class="muted" style="margin-top:0;"><%= claim.category || 'Uncategorized' %> · <%= claim.currency %></p>
+<p><a href="/claims/<%= claim.id %>/edit" class="muted">Edit claim details</a> · <a href="/claims" class="muted">Back to claims</a></p>
+
+<div class="two-col" style="margin-top:24px;">
+  <div>
+    <div class="card">
+      <h3>Details</h3>
+      <div class="row"><span class="k">Amount</span><span class="v"><%= formatMoney(claim.amount, claim.currency) %></span></div>
+      <div class="row"><span class="k">Date incurred</span><span class="v"><%= new Date(claim.dateIncurred).toLocaleDateString('en-IN') %></span></div>
+      <% if (!status.claimed) { %>
+        <div class="row"><span class="k">Days since incurred</span><span class="v"><%= status.daysSinceIncurred %></span></div>
+      <% } %>
+      <% if (claim.notes) { %>
+        <div class="row"><span class="k">Notes</span><span class="v"><%= claim.notes %></span></div>
+      <% } %>
+    </div>
+
+    <% if (status.claimed) { %>
+      <div class="card">
+        <h3>Claimed</h3>
+        <div class="row"><span class="k">Amount received</span><span class="v"><%= formatMoney(claim.claimedAmount, claim.currency) %></span></div>
+        <div class="row"><span class="k">Date</span><span class="v"><%= new Date(claim.claimedDate).toLocaleDateString('en-IN') %></span></div>
+      </div>
+    <% } %>
+  </div>
+
+  <div>
+    <% if (!status.claimed) { %>
+      <div class="card">
+        <h3>Log as claimed</h3>
+        <form action="/claims/<%= claim.id %>/claim" method="POST">
+          <label for="claimedAmount">Amount received</label>
+          <input type="number" step="0.01" id="claimedAmount" name="claimedAmount" value="<%= claim.amount %>" required />
+
+          <label for="claimedDate">Date received</label>
+          <%- include('../partials/date-select', { name: 'claimedDate' }) %>
+
+          <button type="submit" class="btn">Mark as claimed</button>
+        </form>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <h3>Delete claim</h3>
+      <p class="muted" style="margin-top:0;">This cannot be undone.</p>
+      <form action="/claims/<%= claim.id %>/delete" method="POST" onsubmit="return confirm('Delete this claim?');">
+        <button type="submit" class="btn danger">Delete claim</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

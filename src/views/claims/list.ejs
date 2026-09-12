@@ -1,0 +1,48 @@
+<%- include('../partials/header') %>
+
+<div class="topbar" style="padding:0; border:none; margin-bottom:28px;">
+  <h1>Bills to Claim</h1>
+  <a href="/claims/new" class="btn" style="margin:0;">Add claim</a>
+</div>
+
+<% Object.keys(totalsByCurrency).forEach(cur => { const totals = totalsByCurrency[cur]; %>
+  <div class="currency-group-label"><%= cur %></div>
+  <div class="metrics">
+    <div class="metric outstanding">
+      <div class="label">Pending</div>
+      <div class="value"><%= formatMoney(totals.pending, cur) %></div>
+    </div>
+    <div class="metric received">
+      <div class="label">Claimed</div>
+      <div class="value"><%= formatMoney(totals.claimed, cur) %></div>
+    </div>
+  </div>
+<% }) %>
+
+<% if (statuses.length === 0) { %>
+  <p class="muted">No claims yet. <a href="/claims/new" class="tag-violet">Add your first claim</a>.</p>
+<% } %>
+
+<div class="tenant-grid">
+  <% statuses.forEach(s => { %>
+    <a href="/claims/<%= s.claim.id %>" class="tenant-card <%= s.color %>">
+      <div class="name"><%= s.claim.description %></div>
+      <div class="unit"><%= s.claim.category || 'Uncategorized' %> · <%= s.claim.currency %></div>
+
+      <span class="badge <%= s.color %>">
+        <% if (s.claimed) { %>Claimed
+        <% } else if (s.stale) { %>Needs follow-up
+        <% } else { %>Pending
+        <% } %>
+      </span>
+
+      <div class="row"><span class="k">Amount</span><span class="v"><%= formatMoney(s.claim.amount, s.claim.currency) %></span></div>
+      <div class="row"><span class="k">Incurred</span><span class="v"><%= new Date(s.claim.dateIncurred).toLocaleDateString('en-IN') %></span></div>
+      <% if (s.claimed) { %>
+        <div class="row"><span class="k">Claimed on</span><span class="v"><%= new Date(s.claim.claimedDate).toLocaleDateString('en-IN') %></span></div>
+      <% } %>
+    </a>
+  <% }) %>
+</div>
+
+<%- include('../partials/footer') %>
