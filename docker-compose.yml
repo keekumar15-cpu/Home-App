@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  rent-app:
+    build: .
+    container_name: rent-tracker
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      # Bind to localhost only — the VPS's Nginx/Caddy reverse proxy
+      # handles the public-facing domain + SSL and forwards here.
+      - "127.0.0.1:4000:4000"
+    extra_hosts:
+      # Lets the container reach Postgres running directly on the VPS host
+      # (not in a container) via host.docker.internal, on Linux.
+      - "host.docker.internal:host-gateway"
