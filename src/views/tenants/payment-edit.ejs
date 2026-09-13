@@ -1,0 +1,39 @@
+<%- include('../partials/header') %>
+
+<h1>Edit payment</h1>
+<p><a href="/tenants/<%= tenantId %>" class="muted">← Back to tenant</a></p>
+
+<div class="card" style="margin-top:20px; max-width:560px;">
+  <form action="/tenants/<%= tenantId %>/payments/<%= payment.id %>" method="POST">
+    <label for="amount">Amount</label>
+    <input type="number" step="0.01" id="amount" name="amount" value="<%= payment.amount %>" required />
+
+    <label for="forMonth">For month</label>
+    <input type="month" id="forMonth" name="forMonth" value="<%= payment.forMonth %>" required />
+
+    <label for="paymentDate">Payment date</label>
+    <%- include('../partials/date-select', { name: 'paymentDate', value: payment.paymentDate }) %>
+
+    <label for="method">Method</label>
+    <select id="method" name="method">
+      <option value="cash" <%= payment.method === 'cash' ? 'selected' : '' %>>Cash</option>
+      <option value="bank transfer" <%= payment.method === 'bank transfer' ? 'selected' : '' %>>Bank transfer</option>
+      <option value="upi" <%= payment.method === 'upi' ? 'selected' : '' %>>UPI</option>
+      <option value="cheque" <%= payment.method === 'cheque' ? 'selected' : '' %>>Cheque</option>
+      <option value="other" <%= payment.method === 'other' ? 'selected' : '' %>>Other</option>
+    </select>
+
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes" rows="2"><%= payment.notes || '' %></textarea>
+
+    <% if (error) { %><div class="error-msg"><%= error %></div><% } %>
+
+    <button type="submit" class="btn">Save changes</button>
+  </form>
+
+  <form action="/tenants/<%= tenantId %>/payments/<%= payment.id %>/delete" method="POST" onsubmit="return confirm('Delete this payment?');" style="margin-top:8px;">
+    <button type="submit" class="btn danger">Delete payment</button>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>
