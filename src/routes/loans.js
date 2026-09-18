@@ -17,7 +17,7 @@ router.get('/', requireAuth, async (req, res) => {
   const totalsByCurrency = groupByCurrency(
     statuses,
     (s) => s.loan.currency,
-    (s) => ({ principal: s.principal, repaid: s.repaid, outstanding: s.outstanding })
+    (s) => ({ principal: s.principal, repaid: s.repaid, outstanding: s.outstanding, interestPaid: s.interestPaid })
   );
   res.render('loans/list', { statuses, totalsByCurrency, username: req.session.username });
 });
@@ -85,12 +85,13 @@ router.post('/:id', requireAuth, async (req, res) => {
 
 router.post('/:id/repayments', requireAuth, async (req, res) => {
   const loanId = parseInt(req.params.id, 10);
-  const { amount, notes } = req.body;
+  const { amount, notes, type } = req.body;
   if (!amount) return res.redirect(`/loans/${loanId}`);
   await prisma.loanRepayment.create({
     data: {
       loanId,
       amount,
+      type: type === 'interest' ? 'interest' : 'principal',
       date: parseDateFields(req.body, 'date'),
       notes: notes || null,
     },
