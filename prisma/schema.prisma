@@ -124,12 +124,13 @@ model Loan {
 }
 
 model LoanRepayment {
-  id       Int      @id @default(autoincrement())
-  loanId   Int
-  loan     Loan     @relation(fields: [loanId], references: [id])
-  amount   Decimal  @db.Decimal(12, 2)
-  date     DateTime @default(now())
-  notes    String?
+  id        Int      @id @default(autoincrement())
+  loanId    Int
+  loan      Loan     @relation(fields: [loanId], references: [id])
+  amount    Decimal  @db.Decimal(12, 2)
+  type      String   @default("principal") // principal | interest
+  date      DateTime @default(now())
+  notes     String?
   createdAt DateTime @default(now())
 
   @@index([loanId])

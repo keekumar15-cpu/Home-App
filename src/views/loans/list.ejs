@@ -20,6 +20,10 @@
       <div class="label">Outstanding</div>
       <div class="value"><%= formatMoney(totals.outstanding, cur) %></div>
     </div>
+    <div class="metric received">
+      <div class="label">Interest received</div>
+      <div class="value"><%= formatMoney(totals.interestPaid, cur) %></div>
+    </div>
   </div>
 <% }) %>
 
